@@ -1,0 +1,12 @@
+{
+  "title": "BombParty",
+  "description": "Trouve un mot avec la syllabe avant que la bombe t'explose dans les mains 💣",
+  "author": "Léo",
+  "category": "Ambiance",
+  "emoji": "💣",
+  "image": "cover.png",
+  "classement": "victoires",
+  "classements": [
+    { "id": "solo", "titre": "Survie solo", "classement": "score", "unite": "mots" }
+  ]
+}
