@@ -92,6 +92,10 @@ details.rules ul{margin:10px 0 0 18px;display:flex;flex-direction:column;gap:6px
 .gbar{display:flex;align-items:center;gap:8px;padding:8px 62px 4px 10px;flex:none}
 .pill{background:#fff;border:3px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:5px 10px;font-size:14px;white-space:nowrap}
 .pill.y{background:var(--yellow)}
+.pill.lv3{background:#ffe3c2}.pill.lv4{background:#ffc0a0}.pill.lv5{background:var(--red);color:#fff}
+.pill.lv5{animation:fireg .6s ease-in-out infinite alternate}
+@media (max-width:520px){.lvn{display:none} .gbar .pill{padding:5px 7px;font-size:13px}}
+.popb{display:inline-block;background:#b86bff;color:#fff;border-radius:6px;font-size:10px;padding:0 5px;margin-left:4px;vertical-align:1px}
 .spacer{flex:1}
 .gmain{flex:1;min-height:0;display:flex}
 #arena{flex:1;position:relative;min-width:0;min-height:0}
@@ -254,6 +258,8 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
             <li>💣 Une syllabe s'affiche sur la bombe : tape un mot <b>qui la contient</b> et valide avec Entrée.</li>
             <li>⏳ La mèche a une durée <b>secrète</b> : si la bombe explose dans tes mains, tu perds une vie.</li>
             <li>🔁 Un mot ne peut servir qu'une seule fois par partie. Les accents sont facultatifs.</li>
+            <li>🌶️ En mode progressif, les syllabes se corsent au fil des mots trouvés (5 niveaux).</li>
+            <li>🎮 Les mots de pop culture (jeux vidéo, mangas, séries…) sont acceptés !</li>
             <li>🔤 Utilise toutes les lettres de la barre du bas pour gagner une <b>vie bonus</b>.</li>
             <li>🔥 Enchaîne les mots sans exploser pour passer <b>en feu</b>. Les mots de 12 lettres et plus déclenchent un « MOT DE OUF ».</li>
             <li>👑 Le dernier joueur en vie gagne la partie.</li>
@@ -308,6 +314,7 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
     <header class="gbar">
       <div class="pill y" id="g-code">SALLE</div>
       <div class="pill" id="g-info">👥</div>
+      <div class="pill" id="g-lvl"></div>
       <div class="spacer"></div>
       <button class="ib" id="btn-hist" title="Journal">📜</button>
       <button class="ib" id="btn-quit" title="Quitter">✕</button>
@@ -373,8 +380,11 @@ const LS = {
 const COARSE = matchMedia('(pointer:coarse)').matches;
 
 /* ---------------- Dictionnaire ---------------- */
-let WORDS = [], DICT = new Set(), SYL = {}, POOLS = {}, COMMON = [];
-const DIFF = { facile: [1500, 1e9], normal: [400, 8000], difficile: [100, 1500], extreme: [25, 300] };
+let WORDS = [], DICT = new Set(), TIERS = {}, COMMON = [], POP = new Set();
+// Niveaux de syllabes (1 = très facile … 5 = vicieux), calculés sur le nombre de mots COURANTS qui les contiennent
+const DIFF_T = { facile: [1, 2], normal: [2, 3], difficile: [3, 4], extreme: [4, 5] };
+const LVL_AT = [0, 8, 18, 30, 45];   // nombre de mots trouvés pour passer au niveau suivant (mode progressif)
+const LVL_NAME = ['', 'Échauffement', 'Ça chauffe', 'Corsé', 'Brûlant', 'Infernal'];
 async function loadDict() {
   const [t, s] = await Promise.all([
     fetch('mots.txt').then(r => { if (!r.ok) throw new Error('mots'); return r.text(); }),
@@ -386,9 +396,12 @@ async function loadDict() {
     const l = lines[i], p = l.charCodeAt(0) - 48, w = prev.slice(0, p) + l.slice(1);
     WORDS[i] = w; prev = w;
   }
-  DICT = new Set(WORDS); SYL = s;
+  DICT = new Set(WORDS); TIERS = s.tiers || {};
   fetch('communs.txt').then(r => r.ok ? r.text() : '').then(c => { COMMON = c ? c.split('\n') : []; }).catch(() => {});
-  for (const k in DIFF) POOLS[k] = Object.keys(SYL).filter(x => SYL[x] >= DIFF[k][0] && SYL[x] <= DIFF[k][1]);
+  fetch('pop.txt').then(r => r.ok ? r.text() : '').then(c => {
+    POP = new Set((c || '').split(/\r?\n/).map(norm).filter(w => w.length >= 2 && !w.startsWith('#')));
+    POP.forEach(w => DICT.add(w));   // tout mot ajouté à pop.txt est accepté
+  }).catch(() => {});
 }
 function norm(s) {
   return String(s || '').trim().toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae')
@@ -413,7 +426,7 @@ const REASONS = { court: 'Trop court !', syl: s => `Il manque « ${s.toUpperCase
 function check(G, w) {
   if (w.length < 2) return 'court';
   if (!w.includes(G.syl)) return 'syl';
-  if (!DICT.has(w)) return 'dict';
+  if (!DICT.has(w) && !DICT.has(w.replace(/-/g, ''))) return 'dict';
   if (G.used.includes(w)) return 'used';
   return null;
 }
@@ -422,8 +435,9 @@ function reasonText(r, syl) { const x = REASONS[r]; return typeof x === 'functio
 /* ---------------- Moteur (côté hôte) ---------------- */
 const FUSE = { courte: [6000, 13000, 2500], normale: [10000, 22000, 3500], longue: [16000, 32000, 5000] };
 const ALPHA = { classique: 'abcdefghijlmnopqrstuv', complet: 'abcdefghijklmnopqrstuvwxyz', off: '' };
-const SET_DEF = { lives: 3, fuse: 'normale', diff: 'normal', alpha: 'classique' };
+const SET_DEF = { lives: 3, fuse: 'normale', diff: 'progressif', alpha: 'classique' };
 let CUR_SET = Object.assign({}, SET_DEF, LS.get('set', {}));
+if (!LS.get('v2', false)) { CUR_SET.diff = 'progressif'; LS.set('set', CUR_SET); LS.set('v2', true); }
 const T = { turnStart: 0, fuseEnd: 0 };   // horloge locale
 let G = null;                               // état de la partie
 const goneAt = {};
@@ -433,8 +447,17 @@ function mkPlayer(id, name, av) { return { id, name: String(name || 'Joueur').sl
 function newLobby() { return { v: 0, phase: 'lobby', gid: null, set: Object.assign({}, CUR_SET), pl: [], cur: 0, syl: '', used: [], hist: [], recent: [], ev: null, win: null, round: 0, turnEl: 0, fuseLeft: 0 }; }
 function randFuse(G) { const f = FUSE[G.set.fuse] || FUSE.normale; return rnd(f[0], f[1]); }
 function minTurn(G) { return (FUSE[G.set.fuse] || FUSE.normale)[2]; }
+function levelOf(G) {
+  if (G.set.diff !== 'progressif') return 0;
+  let l = 1; LVL_AT.forEach((n, i) => { if (G.used.length >= n) l = i + 1; }); return l;
+}
 function pickSyl(G) {
-  const pool = POOLS[G.set.diff] || POOLS.normal; let s, n = 0;
+  let tiers;
+  if (G.set.diff === 'progressif') { const l = G.lvl || 1; tiers = Math.random() < .7 || l === 1 ? [l] : [l - 1]; }
+  else tiers = DIFF_T[G.set.diff] || DIFF_T.normal;
+  let pool = [].concat(...tiers.map(t => TIERS[t] || []));
+  if (!pool.length) pool = TIERS[2] || ['ou'];
+  let s, n = 0;
   do { s = pool[Math.random() * pool.length | 0]; } while (G.recent.includes(s) && n++ < 40);
   G.recent.push(s); if (G.recent.length > 20) G.recent.shift();
   return s;
@@ -457,7 +480,7 @@ function checkOver(G) {
 function startGame(G, code) {
   const t = now();
   G.phase = 'play'; G.gid = (code || 'LOCAL') + '-' + Date.now().toString(36);
-  G.used = []; G.hist = []; G.recent = []; G.win = null; G.round = 1;
+  G.used = []; G.hist = []; G.recent = []; G.win = null; G.round = 1; G.lvl = levelOf(G);
   G.pl.forEach(p => { p.lives = G.set.lives; p.alive = true; p.let = ''; p.w = 0; p.best = ''; p.streak = 0; });
   G.cur = Math.random() * G.pl.length | 0;
   if (G.pl[G.cur].gone) G.cur = nextIdx(G, G.cur);
@@ -482,10 +505,12 @@ function submitWord(G, pid, raw) {
     if (p.let.length >= A.length) { p.let = ''; if (p.lives < maxLives(G)) { p.lives++; bonus = true; } else bonus = 'max'; }
   }
   const i = G.cur;
-  pushHist(G, { p: i, k: 'ok', w, s: syl });
+  const pop = POP.has(w) ? 1 : 0;
+  pushHist(G, pop ? { p: i, k: 'ok', w, s: syl, pop } : { p: i, k: 'ok', w, s: syl });
+  let lvlUp = 0; const nl = levelOf(G); if (nl > (G.lvl || 0)) { G.lvl = nl; lvlUp = nl; }
   G.cur = nextIdx(G, i); G.syl = pickSyl(G); G.round++;
   T.turnStart = t; if (T.fuseEnd - t < minTurn(G)) T.fuseEnd = t + minTurn(G) + rnd(0, 1500);
-  return { ev: { k: 'ok', p: i, w, s: syl, bonus, big: w.length >= 12, fast: el < 1600, streak: p.streak } };
+  return { ev: { k: 'ok', p: i, w, s: syl, bonus, big: w.length >= 12, fast: el < 1600, streak: p.streak, pop, lvlUp } };
 }
 function boom(G) {
   const t = now(), i = G.cur, p = G.pl[i], syl = G.syl;
@@ -931,6 +956,9 @@ function isMyTurn() {
 function renderHud() {
   const al = aliveIdx(G).length;
   $('#g-code').textContent = NET.online ? 'SALLE ' + NET.code : NET.solo ? 'SURVIE SOLO' : 'MÊME ÉCRAN';
+  const lv = $('#g-lvl');
+  if (G.set.diff === 'progressif') { const l = G.lvl || 1; lv.innerHTML = `${'🌶️'.repeat(l)} <span class="lvn">Niv. ${l}</span>`; lv.className = 'pill lv' + l; }
+  else { lv.textContent = { facile: '🟢 Faciles', normal: '🟡 Normales', difficile: '🟠 Difficiles', extreme: '💀 Extrêmes' }[G.set.diff] || ''; lv.className = 'pill'; }
   $('#g-info').textContent = NET.solo ? `✅ ${G.pl[0].w} mot${G.pl[0].w > 1 ? 's' : ''}` : `👥 ${al} en vie`;
   const mine = isMyTurn();
   document.body.classList.toggle('myturn', mine && !NET.solo || (NET.solo && G.phase === 'play'));
@@ -959,7 +987,7 @@ function renderHist() {
   if (ol.dataset.sig === sig) return; ol.dataset.sig = sig;
   ol.innerHTML = G.hist.slice().reverse().map(h => {
     const p = G.pl[h.p], n = p ? esc(p.name) : '?';
-    if (h.k === 'ok') return `<li><b>${n}</b> · <span class="w">${hl(h.w, h.s)}</span></li>`;
+    if (h.k === 'ok') return `<li><b>${n}</b> · <span class="w">${hl(h.w, h.s)}</span>${h.pop ? '<span class="popb">🎮 POP</span>' : ''}</li>`;
     return `<li class="b">💥 <b>${n}</b> a explosé sur <b>${esc(h.s.toUpperCase())}</b>${h.sol ? `<br><span class="muted">Il fallait dire : <span class="w">${hl(h.sol, h.s)}</span></span>` : ''}</li>`;
   }).join('') || '<li class="muted">Les mots apparaîtront ici.</li>';
 }
@@ -1006,6 +1034,16 @@ function playEvent(ev) {
       $('#bomb').classList.remove('pop'); void $('#bomb').offsetWidth; $('#bomb').classList.add('pop');
       if (ev.big) { setTimeout(() => { banner('MOT DE OUF !<small>' + esc(ev.w.toUpperCase()) + '</small>', 'green', 1700); fxConfetti(120, false); SFX.big(); FX.shake = 10; }, 250); }
       else if (ev.fast) { part({ type: 'text', t: '⚡ ÉCLAIR', x: c.x, y: c.y - 50, vy: -90, life: 1.1, size: 22, col: '#ffd426', stroke: true }); }
+      if (ev.pop) setTimeout(() => {
+        part({ type: 'text', t: '🎮 POP CULTURE', x: c.x, y: c.y < 130 ? c.y + 75 : c.y - (ev.fast ? 80 : 50), vy: c.y < 130 ? 40 : -70, life: 1.4, size: 18, col: '#d9b3ff', stroke: true });
+        for (let i = 0; i < 10; i++) part({ type: 'text', t: ['🎮', '⭐', '👾', '🕹️'][i % 4], font: 'sans-serif', x: c.x, y: c.y, vx: rnd(-260, 260), vy: rnd(-320, -120), g: 420, life: rnd(.8, 1.3), size: rnd(16, 24), vr: rnd(-4, 4) });
+        tone(880, .08, { type: 'square', v: .06 }); tone(1320, .12, { type: 'square', v: .06, at: .08 });
+      }, 500);
+      if (ev.lvlUp) setTimeout(() => {
+        banner(`NIVEAU ${ev.lvlUp} ${'🌶️'.repeat(ev.lvlUp)}<small>${LVL_NAME[ev.lvlUp]} · syllabes plus dures !</small>`, ev.lvlUp >= 4 ? 'red' : '', 1800);
+        flash(ev.lvlUp >= 4 ? '#ff3b5c' : '#ffd426', .35, 600); FX.shake = 6 + ev.lvlUp * 3;
+        [0, 3, 7, 12].forEach((st, k) => tone(220 * ST(st + ev.lvlUp * 2), .25, { type: 'sawtooth', v: .07, at: k * .07 }));
+      }, ev.big ? 2000 : 900);
       if (ev.streak === 5 || (ev.streak >= 10 && ev.streak % 5 === 0)) setTimeout(() => { banner('🔥 ' + esc(p.name) + '<small>EN FEU · ' + ev.streak + ' mots d\'affilée</small>', '', 1500); }, ev.big ? 1800 : 300);
       if (ev.bonus === true) setTimeout(() => {
         banner('+1 ❤️<small>' + esc(p.name) + ' a complété l\'alphabet</small>', 'red', 1600); SFX.life();
@@ -1151,7 +1189,7 @@ function buildReacts(box) { box.innerHTML = EMO.map(e => `<button type="button" 
 const SET_UI = [
   { k: 'lives', l: '❤️ Vies de départ', o: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']] },
   { k: 'fuse', l: '⏱️ Mèche', o: [['courte', 'Courte'], ['normale', 'Normale'], ['longue', 'Longue']] },
-  { k: 'diff', l: '🔤 Syllabes', o: [['facile', 'Faciles'], ['normal', 'Normales'], ['difficile', 'Difficiles'], ['extreme', 'Extrêmes 💀']] },
+  { k: 'diff', l: '🔤 Syllabes', o: [['progressif', 'Progressives 🌶️'], ['facile', 'Faciles'], ['normal', 'Normales'], ['difficile', 'Difficiles'], ['extreme', 'Extrêmes 💀']] },
   { k: 'alpha', l: '🔠 Vie bonus (alphabet)', o: [['classique', 'Sans K W X Y Z'], ['complet', 'A → Z'], ['off', 'Désactivée']] }
 ];
 function renderSettings(box, set, editable, onChange) {
