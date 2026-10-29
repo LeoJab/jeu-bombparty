@@ -112,6 +112,7 @@ bingewatchings
 biohazard
 bioshock
 bitcoin
+kreeper
 bitcoins
 blackclover
 blackpanther
@@ -1549,3 +1550,17 @@ zerator
 zombie
 zombies
 zoro
+Steelix 
+Robin 
+Paruyr 
+Rush 
+Tom 
+Pauline 
+Stympai 
+Leo 
+poppy 
+popper
+Poppers
+Ratonneur 
+Mojang
+RushEnderRank1HTLVCSGO
