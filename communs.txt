@@ -12296,6 +12296,7 @@ koweitiens
 krach
 krasucki
 kratos
+kreeper
 kremlin
 kreuzer
 krilin
@@ -13982,6 +13983,7 @@ moissonneur
 moissonneuse
 moite
 moitie
+mojang
 molaire
 moldave
 moldavie
@@ -15434,6 +15436,7 @@ parure
 parus
 parut
 parution
+paruyr
 parvenaient
 parvenait
 parvenir
@@ -15545,6 +15548,7 @@ pattes
 paturage
 paul
 paulhan
+pauline
 paume
 paumer
 paupiere
@@ -16323,6 +16327,9 @@ pope
 poperen
 popote
 popotin
+popper
+poppers
+poppy
 populaire
 populairement
 populaires
@@ -17595,6 +17602,7 @@ rationalite
 rationnel
 rationnelle
 rationnement
+ratonneur
 rats
 rattache
 rattachee
@@ -18996,6 +19004,7 @@ rurales
 ruraux
 ruse
 ruser
+rush
 rushdie
 russe
 russes
@@ -20266,6 +20275,7 @@ stature
 statut
 statuts
 steam
+steelix
 steeple
 stefan
 stein
@@ -20350,6 +20360,7 @@ style
 styles
 stylistique
 stylo
+stympai
 suant
 suave
 suavite

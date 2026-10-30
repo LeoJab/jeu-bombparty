@@ -179,6 +179,25 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
 #word.shake{animation:shx .35s;border-color:var(--red)}
 #send{padding:0 18px;font-size:22px}
 #hint{min-height:18px;color:#fff;font-size:14px;text-shadow:1px 1px 0 var(--ink);text-align:center}
+#hint button{margin-left:8px;border:2px solid var(--ink);border-radius:8px;background:var(--yellow);font-weight:900;font-size:12px;padding:1px 8px;text-shadow:none;box-shadow:2px 2px 0 var(--ink)}
+.cnt-dot{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;border:2px solid var(--ink);margin-left:6px}
+.ib .cnt-dot{position:absolute;top:-8px;right:-8px;margin:0}
+.ib{position:relative}
+#words{grid-template-columns:minmax(0,520px);justify-content:center}
+@media (max-width:520px){#btn-gwords{display:none!important}}
+#words .wcard{min-width:0;width:100%;max-width:520px;max-height:calc(100dvh - 32px);display:flex;flex-direction:column;gap:12px;animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+#words .whead{display:flex;align-items:center;gap:10px}
+#words .whead h2{flex:1;margin:0;font-size:20px}
+#words .wscroll{overflow-y:auto;min-height:0;flex:1;display:flex;flex-direction:column;gap:10px;padding-right:4px}
+#words h3{font-family:var(--title);font-weight:400;font-size:15px;margin:4px 0 2px}
+.wrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;background:#f1f2ff}
+.wrow.pend{background:#fff4cc}
+.wrow b{font-family:var(--title);font-weight:400;letter-spacing:.5px;word-break:break-all}
+.wrow .by{flex:1;font-size:12px;opacity:.65;text-align:right}
+.wrow button{border:2px solid var(--ink);border-radius:8px;background:#fff;width:32px;height:30px;flex:none;box-shadow:2px 2px 0 var(--ink)}
+.wrow button.ok{background:var(--green)}.wrow button.no{background:var(--red)}
+.wrole{font-size:13px;padding:6px 10px;border-radius:10px;background:var(--ink);color:#fff}
+.wrole.mod{background:var(--green);color:var(--ink)}
 #hint.bad{color:#ffd0d8}
 #reacts{display:flex;gap:6px}
 #reacts button{font-size:19px;width:40px;height:34px;border:2.5px solid var(--ink);border-radius:10px;background:#fff;box-shadow:2px 2px 0 var(--ink)}
@@ -246,6 +265,11 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
         <p class="muted" style="margin-bottom:12px">Passez-vous le téléphone ou le clavier, chacun son tour. (Pour jouer en ligne, ouvre le jeu depuis ChadGangGames.)</p>
         <button class="btn big full" id="btn-local">🎮 Partie à plusieurs</button>
       </div>
+      <div class="card" id="home-words" style="display:none">
+        <h2>✍️ Mots perso</h2>
+        <p class="muted" style="margin-bottom:12px">Il manque un mot ? Propose-le : un modo le valide et il devient jouable pour toute la team.</p>
+        <button class="btn w full" id="btn-words">Gérer les mots <span id="words-dot"></span></button>
+      </div>
       <div class="card">
         <h2>🎯 Survie solo</h2>
         <p class="muted" style="margin-bottom:12px">Enchaîne un max de mots avant de perdre toutes tes vies. <span id="solo-rec"></span></p>
@@ -259,7 +283,8 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
             <li>⏳ La mèche a une durée <b>secrète</b> : si la bombe explose dans tes mains, tu perds une vie.</li>
             <li>🔁 Un mot ne peut servir qu'une seule fois par partie. Les accents sont facultatifs.</li>
             <li>🌶️ En mode progressif, les syllabes se corsent au fil des mots trouvés (5 niveaux).</li>
-            <li>🎮 Les mots de pop culture (jeux vidéo, mangas, séries…) sont acceptés !</li>
+            <li>✍️ Il manque un mot ? Propose-le dans « Mots perso » : un modo le valide pour toute la team.</li>
+            <li>🎮 Bonus acceptés : pop culture, champions LoL ⚔️, prénoms 👤, villes 🌍, marques 🏷️ et mots anglais courants 🇬🇧.</li>
             <li>🔤 Utilise toutes les lettres de la barre du bas pour gagner une <b>vie bonus</b>.</li>
             <li>🔥 Enchaîne les mots sans exploser pour passer <b>en feu</b>. Les mots de 12 lettres et plus déclenchent un « MOT DE OUF ».</li>
             <li>👑 Le dernier joueur en vie gagne la partie.</li>
@@ -295,7 +320,7 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
   <!-- Salon -->
   <section id="scr-lobby" class="screen scroll">
     <div class="col">
-      <div class="row"><button class="ib" id="lob-back" title="Quitter la salle">←</button><div class="grow"></div></div>
+      <div class="row"><button class="ib" id="lob-back" title="Quitter la salle">←</button><div class="grow"></div><button class="btn w" id="lob-words" style="display:none">✍️ Mots perso</button></div>
       <div class="card" style="text-align:center">
         <div class="muted">Code de la salle</div>
         <div class="code" id="lob-code">----</div>
@@ -316,6 +341,7 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
       <div class="pill" id="g-info">👥</div>
       <div class="pill" id="g-lvl"></div>
       <div class="spacer"></div>
+      <button class="ib" id="btn-gwords" title="Mots perso" style="display:none">✍️</button>
       <button class="ib" id="btn-hist" title="Journal">📜</button>
       <button class="ib" id="btn-quit" title="Quitter">✕</button>
     </header>
@@ -345,6 +371,21 @@ body.myturn #word{box-shadow:0 0 0 4px var(--yellow),0 0 26px rgba(255,212,38,.9
 <div id="banners"></div>
 <div id="toasts"></div>
 <div id="over" class="modal"><div class="card overcard" id="overcard"></div></div>
+<div id="words" class="modal"><div class="card wcard">
+  <div class="whead"><h2>✍️ Mots perso</h2><button class="ib" id="words-close" title="Fermer">✕</button></div>
+  <div id="words-role" class="wrole"></div>
+  <form class="row" id="words-form" autocomplete="off">
+    <input class="tx grow" id="words-input" maxlength="30" placeholder="Nouveau mot" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn" type="submit" id="words-add">Proposer</button>
+  </form>
+  <div id="words-msg" class="muted" style="min-height:18px"></div>
+  <div class="wscroll">
+    <div id="words-pending"></div>
+    <div><h3>✅ Mots ajoutés <span id="words-count" class="tag"></span></h3>
+      <input class="tx" id="words-search" placeholder="🔍 Chercher…" style="width:100%;font-size:15px;padding:8px 12px;margin:6px 0" autocomplete="off">
+      <div id="words-list" style="display:flex;flex-direction:column;gap:6px"></div></div>
+  </div>
+</div></div>
 <button class="ib" id="mute" title="Son">🔊</button>
 
 <template id="bombtpl">
@@ -380,15 +421,26 @@ const LS = {
 const COARSE = matchMedia('(pointer:coarse)').matches;
 
 /* ---------------- Dictionnaire ---------------- */
-let WORDS = [], DICT = new Set(), TIERS = {}, COMMON = [], POP = new Set();
+let WORDS = [], DICT = new Set(), TIERS = {}, COMMON = [], POP = new Set(), CAT = new Map(), CUSTOM = new Set();
+// Catégories bonus : effet + badge quand le mot n'est pas un mot français classique
+const CATS = {
+  pop:     { t: '🎮 POP CULTURE', b: '🎮 POP',     col: '#d9b3ff', bg: '#b86bff', e: ['🎮', '⭐', '👾', '🕹️'] },
+  lol:     { t: '⚔️ CHAMPION LOL', b: '⚔️ LOL',    col: '#8fdcff', bg: '#1c8fc9', e: ['⚔️', '🛡️', '✨', '🏆'] },
+  marque:  { t: '🏷️ MARQUE',      b: '🏷️ MARQUE', col: '#ffb8d6', bg: '#e04f8f', e: ['🏷️', '💸', '🛍️', '✨'] },
+  ville:   { t: '🌍 VILLE',        b: '🌍 VILLE',  col: '#a6f5c8', bg: '#17a65a', e: ['🌍', '📍', '🏙️', '✈️'] },
+  prenom:  { t: '👤 PRÉNOM',       b: '👤 PRÉNOM', col: '#ffe08a', bg: '#d99a00', e: ['👤', '💬', '✨', '👋'] },
+  anglais: { t: '🇬🇧 ENGLISH',     b: '🇬🇧 EN',    col: '#bcd8ff', bg: '#3b63c9', e: ['🇬🇧', '☕', '💂', '🫖'] },
+  perso:   { t: '✍️ MOT PERSO',    b: '✍️ PERSO',  col: '#ffd426', bg: '#12102b', e: ['✍️', '⭐', '🫡', '✨'] }
+};
 // Niveaux de syllabes (1 = très facile … 5 = vicieux), calculés sur le nombre de mots COURANTS qui les contiennent
 const DIFF_T = { facile: [1, 2], normal: [2, 3], difficile: [3, 4], extreme: [4, 5] };
 const LVL_AT = [0, 8, 18, 30, 45];   // nombre de mots trouvés pour passer au niveau suivant (mode progressif)
 const LVL_NAME = ['', 'Échauffement', 'Ça chauffe', 'Corsé', 'Brûlant', 'Infernal'];
 async function loadDict() {
-  const [t, s] = await Promise.all([
+  const [t, s, ex] = await Promise.all([
     fetch('mots.txt').then(r => { if (!r.ok) throw new Error('mots'); return r.text(); }),
-    fetch('syl.json').then(r => { if (!r.ok) throw new Error('syl'); return r.json(); })
+    fetch('syl.json').then(r => { if (!r.ok) throw new Error('syl'); return r.json(); }),
+    fetch('extras.txt').then(r => r.ok ? r.text() : '').catch(() => '')
   ]);
   const lines = t.split('\n'); let prev = '';
   WORDS = new Array(lines.length);
@@ -397,6 +449,14 @@ async function loadDict() {
     WORDS[i] = w; prev = w;
   }
   DICT = new Set(WORDS); TIERS = s.tiers || {};
+  // extras : prénoms, villes, marques, champions LoL, anglais (sections « #cat », mots codés par préfixe)
+  if (ex) { let cat = null; prev = '';
+    for (const l of ex.split('\n')) {
+      if (l[0] === '#') { cat = l.slice(1).trim(); prev = ''; continue; }
+      if (!l) continue;
+      const w = prev.slice(0, l.charCodeAt(0) - 48) + l.slice(1); prev = w;
+      DICT.add(w); if (!CAT.has(w)) CAT.set(w, cat);
+    } }
   fetch('communs.txt').then(r => r.ok ? r.text() : '').then(c => { COMMON = c ? c.split('\n') : []; }).catch(() => {});
   fetch('pop.txt').then(r => r.ok ? r.text() : '').then(c => {
     POP = new Set((c || '').split(/\r?\n/).map(norm).filter(w => w.length >= 2 && !w.startsWith('#')));
@@ -426,10 +486,11 @@ const REASONS = { court: 'Trop court !', syl: s => `Il manque « ${s.toUpperCase
 function check(G, w) {
   if (w.length < 2) return 'court';
   if (!w.includes(G.syl)) return 'syl';
-  if (!DICT.has(w) && !DICT.has(w.replace(/-/g, ''))) return 'dict';
+  if (!known(w)) return 'dict';
   if (G.used.includes(w)) return 'used';
   return null;
 }
+function known(w) { const w2 = w.replace(/-/g, ''); return DICT.has(w) || DICT.has(w2) || CUSTOM.has(w) || CUSTOM.has(w2); }
 function reasonText(r, syl) { const x = REASONS[r]; return typeof x === 'function' ? x(syl) : (x || 'Refusé'); }
 
 /* ---------------- Moteur (côté hôte) ---------------- */
@@ -505,12 +566,14 @@ function submitWord(G, pid, raw) {
     if (p.let.length >= A.length) { p.let = ''; if (p.lives < maxLives(G)) { p.lives++; bonus = true; } else bonus = 'max'; }
   }
   const i = G.cur;
-  const pop = POP.has(w) ? 1 : 0;
-  pushHist(G, pop ? { p: i, k: 'ok', w, s: syl, pop } : { p: i, k: 'ok', w, s: syl });
+  const wk = DICT.has(w) ? w : w.replace(/-/g, '');
+  const wc = CUSTOM.has(w) ? w : w.replace(/-/g, '');
+  const cat = CAT.get(wk) || (POP.has(wk) ? 'pop' : null) || (!DICT.has(w) && !DICT.has(wc) && CUSTOM.has(wc) ? 'perso' : null);
+  pushHist(G, cat ? { p: i, k: 'ok', w, s: syl, cat } : { p: i, k: 'ok', w, s: syl });
   let lvlUp = 0; const nl = levelOf(G); if (nl > (G.lvl || 0)) { G.lvl = nl; lvlUp = nl; }
   G.cur = nextIdx(G, i); G.syl = pickSyl(G); G.round++;
   T.turnStart = t; if (T.fuseEnd - t < minTurn(G)) T.fuseEnd = t + minTurn(G) + rnd(0, 1500);
-  return { ev: { k: 'ok', p: i, w, s: syl, bonus, big: w.length >= 12, fast: el < 1600, streak: p.streak, pop, lvlUp } };
+  return { ev: { k: 'ok', p: i, w, s: syl, bonus, big: w.length >= 12, fast: el < 1600, streak: p.streak, cat, lvlUp } };
 }
 function boom(G) {
   const t = now(), i = G.cur, p = G.pl[i], syl = G.syl;
@@ -648,6 +711,7 @@ function onMsg(d, from) {
       break;
     case 'rej': if (from.id !== NET.me) { seatFx(from.id, 'rej'); SFX.bad(true); } break;
     case 'react': floatReact(from.id, d.e); break;
+    case 'dico': refreshWords(); break;
   }
 }
 
@@ -987,7 +1051,7 @@ function renderHist() {
   if (ol.dataset.sig === sig) return; ol.dataset.sig = sig;
   ol.innerHTML = G.hist.slice().reverse().map(h => {
     const p = G.pl[h.p], n = p ? esc(p.name) : '?';
-    if (h.k === 'ok') return `<li><b>${n}</b> · <span class="w">${hl(h.w, h.s)}</span>${h.pop ? '<span class="popb">🎮 POP</span>' : ''}</li>`;
+    if (h.k === 'ok') return `<li><b>${n}</b> · <span class="w">${hl(h.w, h.s)}</span>${h.cat && CATS[h.cat] ? `<span class="popb" style="background:${CATS[h.cat].bg}">${CATS[h.cat].b}</span>` : ''}</li>`;
     return `<li class="b">💥 <b>${n}</b> a explosé sur <b>${esc(h.s.toUpperCase())}</b>${h.sol ? `<br><span class="muted">Il fallait dire : <span class="w">${hl(h.sol, h.s)}</span></span>` : ''}</li>`;
   }).join('') || '<li class="muted">Les mots apparaîtront ici.</li>';
 }
@@ -1021,6 +1085,7 @@ function playEvent(ev) {
   const P = i => G.pl[i] || { name: '?', id: '?' };
   switch (ev.k) {
     case 'start':
+      if (!isHost()) refreshWords();
       $('#over').classList.remove('on'); countdownLast = null; FX.fw = 0;
       flash('#ffd426', .5, 500); SFX.pop();
       if (ev.duel) setTimeout(() => { banner('⚔️ DUEL ⚔️', 'red', 1600); SFX.duel(); }, 3600);
@@ -1034,9 +1099,10 @@ function playEvent(ev) {
       $('#bomb').classList.remove('pop'); void $('#bomb').offsetWidth; $('#bomb').classList.add('pop');
       if (ev.big) { setTimeout(() => { banner('MOT DE OUF !<small>' + esc(ev.w.toUpperCase()) + '</small>', 'green', 1700); fxConfetti(120, false); SFX.big(); FX.shake = 10; }, 250); }
       else if (ev.fast) { part({ type: 'text', t: '⚡ ÉCLAIR', x: c.x, y: c.y - 50, vy: -90, life: 1.1, size: 22, col: '#ffd426', stroke: true }); }
-      if (ev.pop) setTimeout(() => {
-        part({ type: 'text', t: '🎮 POP CULTURE', x: c.x, y: c.y < 130 ? c.y + 75 : c.y - (ev.fast ? 80 : 50), vy: c.y < 130 ? 40 : -70, life: 1.4, size: 18, col: '#d9b3ff', stroke: true });
-        for (let i = 0; i < 10; i++) part({ type: 'text', t: ['🎮', '⭐', '👾', '🕹️'][i % 4], font: 'sans-serif', x: c.x, y: c.y, vx: rnd(-260, 260), vy: rnd(-320, -120), g: 420, life: rnd(.8, 1.3), size: rnd(16, 24), vr: rnd(-4, 4) });
+      const K = CATS[ev.cat];
+      if (K) setTimeout(() => {
+        part({ type: 'text', t: K.t, x: c.x, y: c.y < 130 ? c.y + 75 : c.y - (ev.fast ? 80 : 50), vy: c.y < 130 ? 40 : -70, life: 1.4, size: 18, col: K.col, stroke: true });
+        for (let i = 0; i < 10; i++) part({ type: 'text', t: K.e[i % K.e.length], font: 'sans-serif', x: c.x, y: c.y, vx: rnd(-260, 260), vy: rnd(-320, -120), g: 420, life: rnd(.8, 1.3), size: rnd(16, 24), vr: rnd(-4, 4) });
         tone(880, .08, { type: 'square', v: .06 }); tone(1320, .12, { type: 'square', v: .06, at: .08 });
       }, 500);
       if (ev.lvlUp) setTimeout(() => {
@@ -1151,7 +1217,12 @@ function onSubmit(e) {
   if (!isMyTurn()) { rejectInput(NET.online && !G.pl.find(x => x.id === NET.me) ? 'Tu es spectateur' : 'Pas ton tour !'); return; }
   if (now() < T.turnStart) return;
   const r = check(G, w);
-  if (r) { rejectInput(reasonText(r, G.syl)); if (NET.online) try { NET.room.send({ t: 'rej' }); } catch (e) {} return; }
+  if (r) {
+    rejectInput(reasonText(r, G.syl));
+    if (r === 'dict' && WL.api && validWordShape(w)) { const h = $('#hint'), b = document.createElement('button'); b.type = 'button'; b.dataset.prop = w; b.textContent = WL.mod ? '➕ Ajouter ce mot' : '➕ Proposer ce mot'; h.appendChild(b); }
+    if (NET.online) try { NET.room.send({ t: 'rej' }); } catch (e) {}
+    return;
+  }
   inp.value = ''; hint('');
   if (!NET.online || isHost()) { const res = submitWord(G, p.id, w); if (res.ev) commit(res.ev); else if (res.r && res.r !== 'wait') rejectInput(reasonText(res.r, G.syl)); }
   else { try { NET.room.send({ t: 'word', w }); } catch (e) {} typed[p.id] = w; updateTyped(); }
@@ -1302,6 +1373,82 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
+/* ---------------- Mots perso (liste partagée du hub, avec modération) ---------------- */
+const WL = { api: null, mod: false, items: [], busy: false };
+const validWordShape = w => /^[a-z]+(?:-[a-z]+)*$/.test(w) && w.length >= 2 && w.length <= 30;
+async function refreshWords() {
+  if (!WL.api) return;
+  try {
+    const r = await WL.api.lire();
+    WL.mod = !!r.moderateur; WL.items = r.items || [];
+    CUSTOM = new Set(WL.items.filter(x => x.statut === 'ok').map(x => norm(x.valeur)).filter(Boolean));
+    renderWordsDot(); if ($('#words').classList.contains('on')) renderWords();
+  } catch (e) { console.warn('liste des mots', e); }
+}
+function pendingCount() { return WL.items.filter(x => x.statut !== 'ok' && (WL.mod || x.toi)).length; }
+function renderWordsDot() {
+  const n = WL.mod ? WL.items.filter(x => x.statut !== 'ok').length : 0;
+  const dot = n ? `<span class="cnt-dot">${n}</span>` : '';
+  $('#words-dot').innerHTML = dot;
+  const g = $('#btn-gwords'); g.innerHTML = '✍️' + dot;
+  $('#lob-words').innerHTML = '✍️ Mots perso' + dot;
+}
+function openWords() {
+  if (!WL.api) return;
+  $('#words-role').className = 'wrole' + (WL.mod ? ' mod' : '');
+  $('#words-role').textContent = WL.mod ? '🛡️ Tu es modo : tes mots sont ajoutés directement, et tu valides ceux des autres.' : '📝 Tes propositions seront validées par un modo ou un admin.';
+  $('#words-add').textContent = WL.mod ? 'Ajouter' : 'Proposer';
+  $('#words-msg').textContent = ''; $('#words').classList.add('on'); renderWords(); refreshWords();
+  if (!COARSE) setTimeout(() => $('#words-input').focus(), 50);
+}
+function wordRow(x, pend) {
+  const by = x.par ? esc(x.par.name) + (x.toi ? ' (toi)' : '') : '';
+  let btns = '';
+  if (pend && WL.mod) btns = `<button type="button" class="ok" title="Valider" data-a="valider" data-id="${x.id}">✓</button><button type="button" class="no" title="Refuser" data-a="refuser" data-id="${x.id}">✕</button>`;
+  else if (pend && x.toi) btns = `<button type="button" title="Annuler ma proposition" data-a="retirer" data-id="${x.id}">↩</button>`;
+  else if (!pend && WL.mod) btns = `<button type="button" title="Retirer ce mot" data-a="retirer" data-id="${x.id}">🗑️</button>`;
+  return `<div class="wrow${pend ? ' pend' : ''}"><b>${esc(String(x.valeur).toUpperCase())}</b><span class="by">${pend ? '⏳ ' : ''}${by}</span>${btns}</div>`;
+}
+function renderWords() {
+  const pend = WL.items.filter(x => x.statut !== 'ok'), okw = WL.items.filter(x => x.statut === 'ok');
+  $('#words-pending').innerHTML = pend.length ? `<h3>⏳ ${WL.mod ? 'À valider' : 'Mes propositions en attente'} <span class="tag">${pend.length}</span></h3><div style="display:flex;flex-direction:column;gap:6px">${pend.map(x => wordRow(x, true)).join('')}</div>` : (WL.mod ? '<div class="muted">Aucune proposition à valider 👌</div>' : '');
+  const qy = norm($('#words-search').value);
+  const list = okw.filter(x => !qy || norm(x.valeur).includes(qy)).sort((a, b) => a.valeur.localeCompare(b.valeur));
+  $('#words-count').textContent = okw.length;
+  $('#words-list').innerHTML = list.slice(0, 300).map(x => wordRow(x, false)).join('') + (list.length > 300 ? `<div class="muted">… et ${list.length - 300} autres (utilise la recherche)</div>` : '') || '<div class="muted">Aucun mot pour l\'instant.</div>';
+}
+function wordsMsg(t, bad) { const m = $('#words-msg'); m.textContent = t; m.style.color = bad ? 'var(--red)' : ''; }
+async function proposeWord(raw, fromPanel) {
+  if (!WL.api || WL.busy) return;
+  const w = norm(raw);
+  const say = (t, bad) => { if (fromPanel) wordsMsg(t, bad); else toast(t); };
+  if (!validWordShape(w)) return say('Seulement des lettres (et des tirets), de 2 à 30 caractères.', true);
+  if (known(w)) return say(`« ${w.toUpperCase()} » est déjà accepté dans le jeu 👍`, true);
+  if (WL.items.some(x => norm(x.valeur) === w)) return say('Ce mot est déjà proposé, en attente de validation.', true);
+  WL.busy = true;
+  try {
+    const r = await WL.api.proposer(w);
+    const okd = r && r.item && r.item.statut === 'ok';
+    say(okd ? `✅ « ${w.toUpperCase()} » est ajouté, il est jouable tout de suite !` : `📨 « ${w.toUpperCase()} » est proposé : un modo va le valider.`);
+    if (fromPanel) $('#words-input').value = '';
+    SFX.pop(); await refreshWords();
+    if (okd && NET.online && NET.room) try { NET.room.send({ t: 'dico' }); } catch (e) {}
+  } catch (e) { say('😬 ' + (e.message || 'Impossible d\'envoyer le mot'), true); }
+  finally { WL.busy = false; }
+}
+async function moderateWord(id, action) {
+  if (!WL.api || WL.busy) return;
+  const x = WL.items.find(i => i.id === id); if (!x) return;
+  WL.busy = true;
+  try {
+    await WL.api[action](id);
+    wordsMsg(action === 'valider' ? `✅ « ${x.valeur.toUpperCase()} » validé` : action === 'refuser' ? `❌ « ${x.valeur.toUpperCase()} » refusé` : `🗑️ « ${x.valeur.toUpperCase()} » retiré`);
+    SFX.pop(); await refreshWords();
+    if (NET.online && NET.room) try { NET.room.send({ t: 'dico' }); } catch (e) {}
+  } catch (e) { wordsMsg('😬 ' + (e.message || 'Action impossible'), true); }
+  finally { WL.busy = false; }
+}
+
 /* ---------------- Init ---------------- */
 function waitSDK() { return new Promise(res => { if (window.ChadGang) return res(); let n = 0; const iv = setInterval(() => { if (window.ChadGang || ++n > 20) { clearInterval(iv); res(); } }, 100); }); }
 async function init() {
@@ -1326,7 +1473,19 @@ async function init() {
   $('#loc-go').onclick = startLocal;
   $('#wait-cancel').onclick = () => { leaveRoom(); show('home'); };
   $('#lob-back').onclick = () => { leaveRoom(); G = null; renderHome(); show('home'); };
-  $('#lob-start').onclick = () => { if (!isHost() || !G || G.pl.length < 2) return; SEATS.forEach(el => el.remove()); SEATS.clear(); commit(startGame(G, NET.code)); };
+  $('#lob-start').onclick = async () => {
+    if (!isHost() || !G || G.pl.length < 2) return;
+    $('#lob-start').disabled = true; await Promise.race([refreshWords(), new Promise(r => setTimeout(r, 2500))]); $('#lob-start').disabled = false;
+    if (!isHost() || !G || G.phase !== 'lobby' || G.pl.length < 2) return;
+    SEATS.forEach(el => el.remove()); SEATS.clear(); commit(startGame(G, NET.code));
+  };
+  $('#btn-words').onclick = $('#lob-words').onclick = $('#btn-gwords').onclick = () => openWords();
+  $('#words-close').onclick = () => $('#words').classList.remove('on');
+  $('#words').addEventListener('click', e => { if (e.target.id === 'words') $('#words').classList.remove('on'); });
+  $('#words-form').addEventListener('submit', e => { e.preventDefault(); proposeWord($('#words-input').value, true); });
+  $('#words-search').addEventListener('input', () => renderWords());
+  $('#words').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (b) moderateWord(+b.dataset.id, b.dataset.a); });
+  $('#hint').addEventListener('click', e => { const b = e.target.closest('button[data-prop]'); if (b) { proposeWord(b.dataset.prop, false); hint(''); } });
   $('#btn-quit').onclick = () => quitGame(false);
   $('#btn-hist').onclick = () => document.body.classList.toggle('showhist');
   $('#wordform').addEventListener('submit', onSubmit);
@@ -1340,7 +1499,9 @@ async function init() {
   if (window.ChadGang) {
     NET.sdk = true;
     try { ME = await ChadGang.me(); } catch (e) { ME = null; }
+    if (ChadGang.liste) { WL.api = ChadGang.liste('mots'); WL.mod = !!(ME && (ME.isModo || ME.isAdmin)); await Promise.race([refreshWords(), new Promise(r => setTimeout(r, 2500))]); setInterval(refreshWords, 120000); }
   }
+  ['#home-words', '#lob-words', '#btn-gwords'].forEach(sel => { $(sel).style.display = WL.api ? '' : 'none'; });
   if (!NET.sdk && LOCAL_NAMES.length === 0) LOCAL_NAMES = [];
   renderHome();
   let rc = null; try { rc = window.ChadGang && ChadGang.room && ChadGang.room(); } catch (e) {}

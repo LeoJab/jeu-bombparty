@@ -11,7 +11,7 @@ Jeu de mots explosif pour le hub ChadGangGames : une syllabe s'affiche sur la bo
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Tout le jeu (HTML/CSS/JS) |
-| `mots.txt` | Dictionnaire français (~325 000 formes, sans accents, compressé par préfixes) |
+| `mots.txt` | Dictionnaire français complet (~497 000 formes : an-array-of-french-words + Wiktionnaire + Hunspell/Grammalecte développé), sans accents, compressé par préfixes |
 | `syl.json` | Syllabes classées en 5 niveaux selon le nombre de mots courants qui les contiennent (minimum 10) |
 | `communs.txt` | Mots courants (+ pop culture) : servent à noter la difficulté des syllabes et à proposer la solution après une explosion |
 | `extras.txt` | Mots bonus par catégorie (sections `#lol`, `#marque`, `#ville`, `#prenom`, `#anglais`, codés par préfixe) : ~134 000 entrées |
@@ -32,3 +32,11 @@ Dictionnaire : [an-array-of-french-words](https://github.com/words/an-array-of-f
 
 ## Ajouter des mots pop culture
 Ajoute simplement une ligne par mot dans `pop.txt` (majuscules et accents acceptés, espaces ignorés : `One Piece` → `onepiece`), puis `git push`. Le mot est accepté en jeu et déclenche l'effet 🎮 POP CULTURE.
+
+## Mots perso (ajoutés par les joueurs)
+Bouton **✍️ Mots perso** (accueil, salon, en jeu) et bouton « ➕ Proposer ce mot » quand un mot est refusé.
+Les mots sont stockés **dans le hub** (`ChadGang.liste('mots')`, voir la fiche du hub) :
+- un membre propose → en attente ; un **modo ou un admin** valide ou refuse (une alerte part dans le salon Discord admin) ;
+- un modo/admin qui ajoute un mot l'ajoute directement ;
+- les modos/admins peuvent **retirer** un mot ajouté ; chacun peut annuler sa propre proposition.
+Les mots validés sont jouables tout de suite (le jeu relit la liste au lancement d'une partie et quand quelqu'un modifie la liste).
